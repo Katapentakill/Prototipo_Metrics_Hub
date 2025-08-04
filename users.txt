@@ -1,0 +1,83 @@
+# Volunteer Metrics Hub – User Roles & Permissions
+
+## 👤 1. Volunteer (Voluntario/a)
+
+Rol principal del sistema. Accede a su proceso, dashboard y certificados.
+
+Funciones disponibles:
+- Completar formulario de registro
+- Subir CV, carta de motivación y enlaces profesionales
+- Ver estado del proceso de reclutamiento (Timeline)
+- Descargar carta de aceptación
+- Acceder a manuales, herramientas (Slack, ClickUp, etc.)
+- Ver detalles de su rol, equipo y supervisor
+- Consultar dashboard personal:
+  - Progreso general
+  - Feedback recibido
+  - Certificados
+  - Calendario de actividades
+- Editar información personal básica
+
+Rutas asociadas:
+- `/recruitment/[id]`
+- `/onboarding/[id]`
+- `/dashboard`
+- `/evaluation/[id]`
+- `/profile/[id]`
+
+
+## 👤 2. Coordinator (Coordinador/a)
+
+Gestor de procesos de reclutamiento y asignación.
+
+Funciones disponibles:
+- Revisar postulaciones recibidas
+- Cambiar estados del proceso (Timeline)
+- Agendar entrevistas (Calendly)
+- Enviar cartas (aceptación/rechazo)
+- Validar documentos firmados
+- Asignar rol, equipo, supervisor, fechas
+- Compartir acceso a herramientas externas
+- Evaluar voluntarios al cierre del ciclo
+- Descargar certificados
+- Usar filtros por etapa, país, universidad
+- Exportar datos a PDF/Excel
+
+Rutas asociadas:
+- `/recruitment/[id]`
+- `/onboarding/[id]`
+- `/dashboard` (modo admin)
+- `/evaluation/[id]`
+- `/impact`
+
+
+## 👤 3. Supervisor
+
+Responsable directo de uno o más voluntarios.
+
+Funciones disponibles:
+- Ver voluntario asignado
+- Completar formulario de evaluación
+  - Puntualidad, habilidades, compromiso, etc.
+- Escribir comentarios abiertos
+- Indicar recomendación futura
+- Firmar evaluación
+
+Rutas asociadas:
+- `/evaluation/[id]`
+
+
+## 👤 4. Admin (Administrador/a del sistema)
+
+Gestión técnica del sistema (backend/configuración).
+
+Funciones disponibles:
+- Gestión de cuentas de coordinadores/supervisores
+- Activación/desactivación de usuarios
+- Configuración de integraciones (Calendly, ClickUp, etc.)
+- Configuración regional/multilingüe
+- Validación de seguridad y privacidad
+- Gestión global del sistema (estado, idiomas, backups)
+
+Rutas asociadas:
+- Accesos no simulados en frontend (solo visibles como mock/config)

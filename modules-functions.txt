@@ -1,0 +1,88 @@
+# Volunteer Metrics Hub – Módulos del Sistema y Funcionalidades por Fase
+
+Este archivo resume los 10 módulos funcionales del sistema y las funciones asociadas a cada uno, organizados por fase de implementación frontend.
+
+---
+
+## 🟩 FASE 1 – Recruitment Process (Módulo 2)
+Ruta: `/recruitment/[id]`
+Funciones:
+- Visualización del proceso de 8 etapas (Timeline)
+- Descargar carta de aceptación (PDF simulado)
+- Mostrar detalles del voluntario
+- Simulación de integración con Calendly
+
+## 🟩 FASE 2 – Onboarding & Assignment (Módulo 3)
+Ruta: `/onboarding/[id]`
+Funciones:
+- Mostrar equipo, rol y supervisor
+- Fechas de inicio/fin
+- Tipo de compromiso: OPT / CPT / Internacional
+- Acceso a herramientas externas (Slack, ClickUp, Drive)
+
+## 🟩 FASE 3 – Volunteer Dashboard (Módulo 4)
+Ruta: `/dashboard`
+Funciones:
+- Progreso visual
+- Feedback recibido
+- Calendario de actividades
+- Certificados
+- Edición de información personal (mock)
+
+## 🟩 FASE 4 – Performance Evaluation (Módulo 6)
+Ruta: `/evaluation/[id]`
+Funciones:
+- Evaluación con criterios del 1 al 5
+- Comentarios y recomendación
+- Firma de supervisor
+- Botón de enviar evaluación (mock)
+
+## 🟨 FASE 5 – Admin Back Office (Módulo 5)
+Ruta: `/dashboard` (modo admin)
+Funciones:
+- Filtros por etapa, país, universidad, equipo, OPT/CPT
+- Tabla de voluntarios
+- Acciones rápidas (ver, cambiar estado, generar carta)
+- Exportación de datos
+- Historial de desempeño
+
+## 🟧 FASE 6 – CV HTML Profile Generator (Módulo 7)
+Ruta: `/profile/[id]`
+Funciones:
+- Subida de CV (mock)
+- Visualización autoformateada: perfil profesional HTML
+- Skills, experiencia, redes, certificados
+- Estilo portfolio
+
+## 🟥 FASE 7 – Scrum System for Teams (Módulo 8)
+Ruta: `/team-board/[team]`
+Funciones:
+- Kanban board: To Do / In Progress / Done
+- Sprint planner básico
+- Crear tareas mock
+- Comentarios, historial de tareas
+
+## 🟥 FASE 8 – Impact & Skills Dashboard (Módulo 9)
+Ruta: `/impact`
+Funciones:
+- Gráficos: horas, habilidades, contribución
+- Filtros por equipo, fecha, tipo de tarea
+- Exportar dashboards
+- Vista coordinador/voluntario
+
+## 🔒 FASE 9 – Registration (Módulo 1) *(omitido por ahora)*
+Ruta esperada: `/register`
+Funciones esperadas:
+- Formulario completo con 12+ campos
+- Upload de CV/carta
+- Validaciones
+- Confirmación por email
+- Guardado en base de datos
+
+## 🔒 FASE 10 – Login & Auth System *(omitido por ahora)*
+Ruta esperada: `/login`
+Funciones esperadas:
+- Login con correo y contraseña (Auth0 o Firebase)
+- Redirección por tipo de usuario
+- Sesión activa y persistente
+- Middleware para proteger rutas privadas
