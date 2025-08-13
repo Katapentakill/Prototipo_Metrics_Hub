@@ -1,6 +1,6 @@
 
 // src/lib/data/extendedUsers.ts
-import { ExtendedUserWithProfile } from '@/lib/types/types';
+import { ExtendedUserWithProfile } from '@/lib/types';
 
 export const extendedMockUsers: ExtendedUserWithProfile[] = [
   // Administradores

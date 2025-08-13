@@ -21,7 +21,7 @@ import {
   Download,
   Upload
 } from 'lucide-react';
-import { ExtendedUserWithProfile, UserStats } from '@/lib/types/types';
+import { ExtendedUserWithProfile, UserStats } from '@/lib/types';
 import { extendedMockUsers } from '@/lib/data/extendedUsers';
 import UserFilters from '@/features/admin/UserFilters';
 import UserModal from '@/features/admin/UserModalEdit';

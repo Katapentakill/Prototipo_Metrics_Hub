@@ -15,7 +15,7 @@ import {
   User,
   Shield
 } from 'lucide-react';
-import ActiveLink from './ActiveLink';
+import ActiveLink from '../../ActiveLink';
 
 interface SessionData {
   userId: string;

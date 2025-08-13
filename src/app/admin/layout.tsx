@@ -3,8 +3,8 @@
 
 import { useEffect, useState } from 'react';
 import { redirect } from 'next/navigation';
-import HeaderAdmin from '@/components/layout/HeaderAdmin';
-import FooterAdmin from '@/components/layout/FooterAdmin';
+import HeaderAdmin from '@/components/layout/Admin/HeaderAdmin';
+import FooterAdmin from '@/components/layout/Admin/FooterAdmin';
 
 interface AdminLayoutProps {
   children: React.ReactNode;

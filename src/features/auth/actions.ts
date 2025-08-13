@@ -1,6 +1,6 @@
 'use server';
 
-import { User } from '@/lib/types/types';
+import { User } from '@/lib/types';
 
 const staticUsers: User[] = [
   {

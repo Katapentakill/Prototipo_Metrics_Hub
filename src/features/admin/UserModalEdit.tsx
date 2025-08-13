@@ -25,7 +25,7 @@ import {
   ExtendedUserWithProfile, 
   SimpleSkill, 
   SimpleLanguage 
-} from '@/lib/types/types';
+} from '@/lib/types';
 
 interface UserModalProps {
   user?: ExtendedUserWithProfile | null;

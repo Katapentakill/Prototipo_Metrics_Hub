@@ -25,7 +25,7 @@ import {
   ExternalLink,
   User
 } from 'lucide-react';
-import { ExtendedUserWithProfile } from '@/lib/types/types';
+import { ExtendedUserWithProfile } from '@/lib/types';
 
 interface UserDetailModalProps {
   user: ExtendedUserWithProfile;

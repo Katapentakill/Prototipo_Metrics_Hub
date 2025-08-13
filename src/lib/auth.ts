@@ -1,5 +1,5 @@
 // src/lib/auth.ts
-import { User } from './types/types';
+import { User } from './types';
 
 const AUTH_KEY = 'auth_session';
 
