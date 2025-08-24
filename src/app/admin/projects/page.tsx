@@ -1,31 +1,29 @@
-// src/app/admin/projects/page.tsx
+// UBICACIÓN: src/app/admin/projects/page.tsx
+// Este archivo REEMPLAZA tu page.tsx actual con las nuevas mejoras
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Folder,
-  Search,
-  Filter,
-  MoreVertical,
-  MapPin,
-  Eye,
-  Users as UsersIcon,
-} from 'lucide-react';
+import { Folder, Search, Plus, BarChart3, Grid } from 'lucide-react';
 
 import type {
   Project,
   ExtendedUserWithProfile,
-  ProjectWithLead,
 } from '@/lib/types';
 
 import { extendedMockUsers } from '@/lib/data/extendedUsers';
 import { mockProjects, mockTeams, mockTeamMembers } from '@/lib/data/mockProjects';
-import ProjectFilters, { type ProjectFilterOptions } from '@/features/admin/projects/ProjectFilters';
-import ProjectActions from '@/features/admin/projects/ProjectActions';
-import ProjectModalEdit from '@/features/admin/projects/ProjectModalEdit';
-import ProjectDetailModal from '@/features/admin/projects/ProjectDetailModal';
 import ExportProjects from '@/features/admin/projects/ExportProjects';
-import { buildProjectViews, type ProjectView } from '@/lib/data/map/projects/projectView';
+import { buildProjectViews, ProjectView } from '@/lib/map/projects/projectView';
+import AdvancedProjectFilters, { AdvancedProjectFilterOptions } from '@/features/admin/projects/AdvancedProjectFilters';
+import ProjectsDashboard from '@/features/admin/projects/ProjectsDashboard';
+import ProjectsGridView from '@/features/admin/projects/ProjectsGridView';
+import ProjectModalEdit from '@/features/admin/projects/modals/ProjectModalEdit';
+import ProjectDetailModal from '@/features/admin/projects/modals/ProjectDetailModal';
+
+
+
+type ViewMode = 'dashboard' | 'projects';
 
 export default function AdminProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -34,25 +32,30 @@ export default function AdminProjectsPage() {
   const [filtered, setFiltered] = useState<ProjectView[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // filtros
+  // Estados de vista
+  const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [adv, setAdv] = useState<ProjectFilterOptions>({ status: 'all' });
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedProjectFilterOptions>({
+    status: 'all',
+    progressRange: [0, 100],
+    teamSizeRange: [1, 20],
+    priority: 'all',
+    riskLevel: 'all'
+  });
 
-  // modales / acciones
+  // Estados de modales
   const [selected, setSelected] = useState<ProjectView | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-  const [menuFor, setMenuFor] = useState<string | null>(null);
 
   const leadCandidates = useMemo(
     () => extendedMockUsers.filter((u) => u.role === 'lead_project'),
     []
   );
 
+  // Cargar datos
   useEffect(() => {
     (async () => {
-      // simular carga
       await new Promise((r) => setTimeout(r, 300));
       setUsers(extendedMockUsers);
       setProjects(mockProjects);
@@ -60,6 +63,7 @@ export default function AdminProjectsPage() {
     })();
   }, []);
 
+  // Construir vistas cuando cambien los datos
   useEffect(() => {
     if (!isLoading) {
       const v = buildProjectViews(projects, users, mockTeams, mockTeamMembers);
@@ -67,12 +71,15 @@ export default function AdminProjectsPage() {
     }
   }, [isLoading, projects, users]);
 
-  useEffect(() => { applyFilters(); }, [views, searchTerm, adv]);
+  // Aplicar filtros cuando cambien
+  useEffect(() => { 
+    applyFilters(); 
+  }, [views, searchTerm, advancedFilters]);
 
   const applyFilters = () => {
     let data = [...views];
 
-    // búsqueda
+    // Búsqueda por texto
     const q = searchTerm.trim().toLowerCase();
     if (q) {
       data = data.filter(v =>
@@ -85,36 +92,114 @@ export default function AdminProjectsPage() {
       );
     }
 
-    // estado
-    if (adv.status && adv.status !== 'all') {
-      data = data.filter(v => v.project.status === adv.status);
+    // Filtros avanzados
+    if (advancedFilters.status && advancedFilters.status !== 'all') {
+      data = data.filter(v => v.project.status === advancedFilters.status);
     }
 
-    // país (del líder o del primer miembro)
-    if (adv.country) {
-      const cq = adv.country.toLowerCase();
-      data = data.filter(v => (v.country || '').toLowerCase().includes(cq));
+    if (advancedFilters.country) {
+      const country = advancedFilters.country.toLowerCase();
+      data = data.filter(v => (v.country || '').toLowerCase().includes(country));
+    }
+
+    if (advancedFilters.city) {
+      const city = advancedFilters.city.toLowerCase();
+      data = data.filter(v => (v.city || '').toLowerCase().includes(city));
+    }
+
+    if (advancedFilters.leadName) {
+      const leadName = advancedFilters.leadName.toLowerCase();
+      data = data.filter(v => (v.lead?.name || '').toLowerCase().includes(leadName));
+    }
+
+    if (advancedFilters.progressRange) {
+      const [min, max] = advancedFilters.progressRange;
+      data = data.filter(v => v.progressPct >= min && v.progressPct <= max);
+    }
+
+    if (advancedFilters.teamSizeRange) {
+      const [min, max] = advancedFilters.teamSizeRange;
+      data = data.filter(v => 
+        v.project.current_team_size >= min && 
+        v.project.current_team_size <= max
+      );
+    }
+
+    if (advancedFilters.dateRange?.start) {
+      data = data.filter(v => {
+        if (!v.project.deadline) return false;
+        return new Date(v.project.deadline) >= new Date(advancedFilters.dateRange!.start!);
+      });
+    }
+
+    if (advancedFilters.dateRange?.end) {
+      data = data.filter(v => {
+        if (!v.project.deadline) return false;
+        return new Date(v.project.deadline) <= new Date(advancedFilters.dateRange!.end!);
+      });
+    }
+
+    // Filtro de prioridad (basado en deadline y progreso)
+    if (advancedFilters.priority && advancedFilters.priority !== 'all') {
+      data = data.filter(v => {
+        const daysUntilDeadline = v.project.deadline ? 
+          Math.ceil((new Date(v.project.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 
+          null;
+        
+        const isOverdue = daysUntilDeadline !== null && daysUntilDeadline < 0;
+        const isUrgent = daysUntilDeadline !== null && daysUntilDeadline <= 7 && daysUntilDeadline >= 0;
+        
+        switch (advancedFilters.priority) {
+          case 'urgent':
+            return isOverdue || isUrgent;
+          case 'high':
+            return daysUntilDeadline !== null && daysUntilDeadline <= 14 && !isOverdue && !isUrgent;
+          case 'medium':
+            return daysUntilDeadline !== null && daysUntilDeadline > 14 && daysUntilDeadline <= 30;
+          case 'low':
+            return daysUntilDeadline === null || daysUntilDeadline > 30;
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Filtro de nivel de riesgo
+    if (advancedFilters.riskLevel && advancedFilters.riskLevel !== 'all') {
+      data = data.filter(v => {
+        const daysUntilDeadline = v.project.deadline ? 
+          Math.ceil((new Date(v.project.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 
+          null;
+        
+        const isHighRisk = (daysUntilDeadline !== null && daysUntilDeadline <= 14 && v.progressPct < 70) ||
+                          (daysUntilDeadline !== null && daysUntilDeadline < 0);
+        const isMediumRisk = (daysUntilDeadline !== null && daysUntilDeadline <= 30 && v.progressPct < 50) ||
+                            (v.project.current_team_size < v.project.max_team_size * 0.5);
+        
+        switch (advancedFilters.riskLevel) {
+          case 'high':
+            return isHighRisk;
+          case 'medium':
+            return isMediumRisk && !isHighRisk;
+          case 'low':
+            return !isHighRisk && !isMediumRisk;
+          default:
+            return true;
+        }
+      });
     }
 
     setFiltered(data);
   };
 
-  const badgeStatus = (s: Project['status']) => {
-    switch (s) {
-      case 'active': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'planning': return 'bg-slate-100 text-slate-800 border-slate-200';
-      case 'completed': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'paused': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const formatDate = (s?: string) =>
-    s ? new Date(s.replace(' ', 'T')).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
-
+  // Handlers de acciones
   const onEdit = (v: ProjectView) => { setSelected(v); setShowEdit(true); };
   const onView = (v: ProjectView) => { setSelected(v); setShowDetail(true); };
+  const onDelete = (v: ProjectView) => {
+    if (confirm(`¿Eliminar proyecto "${v.project.name}"?`)) {
+      setProjects(prev => prev.filter(p => p.id !== v.project.id));
+    }
+  };
 
   const onSave = (patch: Partial<Project>) => {
     if (!selected) return;
@@ -125,31 +210,9 @@ export default function AdminProjectsPage() {
     setSelected(null);
   };
 
-  const onDelete = (v: ProjectView) => {
-    if (confirm(`¿Eliminar proyecto "${v.project.name}"?`)) {
-      setProjects(prev => prev.filter(p => p.id !== v.project.id));
-    }
-  };
-
-  const exportOne = (v: ProjectView) => {
-    // Exportar solo uno reutilizando el componente de export general:
-    const headers = [
-      'id','name','status','lead_name','lead_email','country','city',
-      'max_team_size','current_team_size','progress_pct','deadline','created_at'
-    ];
-    const row = [
-      v.project.id, v.project.name.replace(/,/g,' '), v.project.status,
-      v.lead?.name?.replace(/,/g,' ') || '', v.lead?.email || '',
-      v.country || '', v.city || '', v.project.max_team_size,
-      v.project.current_team_size, v.progressPct, v.project.deadline || '',
-      v.project.created_at,
-    ];
-    const csv = [headers.join(','), row.join(',')].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `project_${v.project.id}.csv`; a.click();
-    URL.revokeObjectURL(url);
+  const createNewProject = () => {
+    setSelected(null);
+    setShowEdit(true);
   };
 
   if (isLoading) {
@@ -171,21 +234,58 @@ export default function AdminProjectsPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
+      {/* Header principal */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
         <div>
           <h1 className="text-3xl font-bold text-slate-800 flex items-center">
             <Folder className="w-8 h-8 mr-3 text-emerald-600" />
-            Projects
+            Gestión de Proyectos
           </h1>
-          <p className="text-muted mt-1">Administra los proyectos del sistema Living Stones</p>
+          <p className="text-muted mt-1">
+            Panel completo de administración y seguimiento de proyectos
+          </p>
         </div>
+        
         <div className="flex items-center gap-3">
+          {/* Selector de vista */}
+          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('dashboard')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'dashboard' 
+                  ? 'bg-white text-emerald-600 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span>Dashboard</span>
+            </button>
+            <button
+              onClick={() => setViewMode('projects')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'projects' 
+                  ? 'bg-white text-emerald-600 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <Grid className="w-4 h-4" />
+              <span>Proyectos</span>
+            </button>
+          </div>
+
+          <button 
+            onClick={createNewProject}
+            className="btn-living flex items-center space-x-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nuevo Proyecto</span>
+          </button>
+          
           <ExportProjects views={filtered} />
         </div>
       </div>
 
-      {/* Búsqueda + filtros */}
+      {/* Barra de búsqueda */}
       <div className="card p-6">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div className="flex items-center gap-4 flex-1">
@@ -193,133 +293,50 @@ export default function AdminProjectsPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Buscar por nombre, líder, país…"
+                placeholder="Buscar proyectos, líderes, ubicación..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
               />
             </div>
-            <button onClick={() => setShowFilters((s) => !s)} className="btn-secondary flex items-center gap-2">
-              <Filter className="w-4 h-4" /><span>Filtros</span>
-            </button>
+          </div>
+          
+          <div className="flex items-center text-sm text-gray-600">
+            Mostrando <span className="font-medium text-gray-800">{filtered.length}</span> de{' '}
+            <span className="font-medium text-gray-800">{views.length}</span> proyectos
           </div>
         </div>
-
-        {showFilters && (
-          <ProjectFilters onFilterChange={setAdv} />
-        )}
       </div>
 
-      {/* Tabla */}
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="text-left py-4 px-6 font-semibold text-slate-700">Proyecto</th>
-                <th className="text-left py-4 px-6 font-semibold text-slate-700">Estado</th>
-                <th className="text-left py-4 px-6 font-semibold text-slate-700">Ubicación</th>
-                <th className="text-left py-4 px-6 font-semibold text-slate-700">Equipo</th>
-                <th className="text-left py-4 px-6 font-semibold text-slate-700">Progreso</th>
-                <th className="text-center py-4 px-6 font-semibold text-slate-700">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {filtered.map((v) => (
-                <tr key={v.project.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                        {v.project.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-slate-800">{v.project.name}</p>
-                        <p className="text-xs text-slate-500">Líder: {v.lead?.name} — {v.lead?.email}</p>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td className="py-4 px-6">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${badgeStatus(v.project.status)}`}>
-                      {v.project.status}
-                    </span>
-                  </td>
-
-                  <td className="py-4 px-6">
-                    <div className="text-sm">
-                      <p className="text-slate-800 flex items-center">
-                        <MapPin className="w-3 h-3 mr-1" />
-                        {v.city ? `${v.city}, ` : ''}{v.country || '—'}
-                      </p>
-                      {v.project.deadline && <p className="text-xs text-slate-500">Deadline: {v.project.deadline}</p>}
-                    </div>
-                  </td>
-
-                  <td className="py-4 px-6">
-                    <div className="text-sm flex items-center gap-2">
-                      <UsersIcon className="w-4 h-4 text-slate-400" />
-                      <span>{v.project.current_team_size}/{v.project.max_team_size}</span>
-                    </div>
-                  </td>
-
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-2">
-                      <div className="w-24 bg-slate-200 rounded-full h-2">
-                        <div className="h-2 bg-emerald-500 rounded-full" style={{ width: `${v.progressPct}%` }} />
-                      </div>
-                      <span className="text-xs text-slate-600">{v.progressPct}%</span>
-                    </div>
-                  </td>
-
-                  <td className="py-4 px-6">
-                    <div className="flex items-center justify-center gap-2">
-                      {/* OJO: solo ver detalles aquí */}
-                      <button
-                        onClick={() => onView(v)}
-                        className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors admin-tooltip"
-                        data-tooltip="Ver detalles"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-
-                      <div className="relative">
-                        <button
-                          onClick={() => setMenuFor(menuFor === v.project.id ? null : v.project.id)}
-                          className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-                        >
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
-
-                        {menuFor === v.project.id && (
-                          <ProjectActions
-                            onEdit={() => onEdit(v)}
-                            onExport={() => exportOne(v)}
-                            onDelete={() => onDelete(v)}
-                            onClose={() => setMenuFor(null)}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Contenido principal basado en la vista seleccionada */}
+      {viewMode === 'dashboard' ? (
+        <ProjectsDashboard projects={filtered} />
+      ) : (
+        <div className="space-y-6">
+          {/* Filtros avanzados */}
+          <AdvancedProjectFilters 
+            onFilterChange={setAdvancedFilters}
+            availableLeads={Array.from(new Set(views.map(v => v.lead).filter(Boolean))).map(lead => ({
+              id: lead!.id,
+              name: lead!.name
+            }))}
+          />
+          
+          {/* Vista de proyectos */}
+          <ProjectsGridView
+            projects={filtered}
+            onProjectView={onView}
+            onProjectEdit={onEdit}
+            onProjectDelete={onDelete}
+            loading={isLoading}
+          />
         </div>
-
-        {filtered.length === 0 && (
-          <div className="text-center py-12">
-            <Folder className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-slate-600 mb-2">No se encontraron proyectos</h3>
-            <p className="text-slate-500">Ajusta tu búsqueda o filtros.</p>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Modales */}
-      {showEdit && selected && (
+      {showEdit && (
         <ProjectModalEdit
-          project={selected.project}
+          project={selected?.project || null}
           leads={leadCandidates}
           onSave={onSave}
           onClose={() => { setShowEdit(false); setSelected(null); }}

@@ -1,7 +1,7 @@
 // src/features/admin/projects/ProjectDetailModal.tsx
 'use client';
 
-import { ProjectView } from '@/lib/data/map/projects/projectView';
+import { ProjectView } from '@/lib/map/projects/projectView';
 import { MapPin, Users } from 'lucide-react';
 
 interface Props {

@@ -2,7 +2,7 @@
 'use client';
 
 import { Download } from 'lucide-react';
-import { ProjectView } from '@/lib/data/map/projects/projectView';
+import { ProjectView } from '@/lib/map/projects/projectView';
 
 export default function ExportProjects({ views }: { views: ProjectView[] }) {
   const toCSV = () => {
