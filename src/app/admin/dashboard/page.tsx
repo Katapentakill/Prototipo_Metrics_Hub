@@ -16,10 +16,10 @@ import {
   Activity,
   Calendar
 } from 'lucide-react';
-import DashboardStats from '@/features/admin/DashboardStats';
-import QuickActions from '@/features/admin/QuickActions';
-import RecentActivity from '@/features/admin/RecentActivity';
-import SystemHealth from '@/features/admin/SystemHealth';
+import DashboardStats from '@/features/admin/dashboard/DashboardStats';
+import QuickActions from '@/features/admin/dashboard/QuickActions';
+import RecentActivity from '@/features/admin/dashboard/RecentActivity';
+import SystemHealth from '@/features/admin/dashboard/SystemHealth';
 
 interface DashboardData {
   totalUsers: number;

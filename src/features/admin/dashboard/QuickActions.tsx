@@ -2,7 +2,6 @@
 'use client';
 
 import { 
-  UserPlus, 
   FolderPlus, 
   FileText, 
   Settings, 
@@ -21,13 +20,6 @@ export default function QuickActions() {
   };
 
   const quickActions = [
-    {
-      title: 'Crear Usuario',
-      description: 'Agregar nuevo usuario al sistema',
-      icon: UserPlus,
-      color: 'bg-blue-500 hover:bg-blue-600',
-      action: 'create-user'
-    },
     {
       title: 'Nuevo Proyecto',
       description: 'Iniciar un nuevo proyecto',
@@ -175,7 +167,7 @@ export default function QuickActions() {
             <span className="text-sm text-slate-600">CPU</span>
             <div className="flex items-center space-x-2">
               <div className="w-16 bg-slate-200 rounded-full h-2">
-                <div className="h-2 bg-green-500 rounded-full" style={{ width: '45%' }}></div>
+                <div className="h-2 rounded-full bg-green-500" style={{ width: '45%' }} />
               </div>
               <span className="text-xs text-slate-500">45%</span>
             </div>
@@ -185,7 +177,7 @@ export default function QuickActions() {
             <span className="text-sm text-slate-600">Memoria</span>
             <div className="flex items-center space-x-2">
               <div className="w-16 bg-slate-200 rounded-full h-2">
-                <div className="h-2 bg-blue-500 rounded-full" style={{ width: '67%' }}></div>
+                <div className="h-2 rounded-full bg-blue-500" style={{ width: '67%' }} />
               </div>
               <span className="text-xs text-slate-500">67%</span>
             </div>
@@ -194,7 +186,7 @@ export default function QuickActions() {
           <div className="flex items-center justify-between">
             <span className="text-sm text-slate-600">Base de Datos</span>
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
               <span className="text-xs text-green-600">Conectada</span>
             </div>
           </div>
