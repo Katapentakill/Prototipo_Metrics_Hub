@@ -1,4 +1,3 @@
-// src/app/(admin)/users/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -6,8 +5,6 @@ import {
   Users, 
   Search, 
   Filter, 
-  Edit, 
-  Trash2, 
   MoreVertical,
   Shield,
   UserCheck,
@@ -17,39 +14,56 @@ import {
   Calendar,
   Eye
 } from 'lucide-react';
+
 import { ExtendedUserWithProfile, UserStats } from '@/lib/types';
 import { extendedMockUsers } from '@/lib/data/extendedUsers';
-import UserFilters from '@/features/admin/users/UserFilters';
+import UserFilters, { type FilterOptions as AdvancedFilters } from '@/features/admin/users/UserFilters';
 import UserModal from '@/features/admin/users/UserModalEdit';
 import UserActions from '@/features/admin/users/UserActions';
 import ExportUsers from '@/features/admin/users/ExportUsers';
 import UserDetailModal from '@/features/admin/users/UserDetailModal';
+
+// Modales extra
+import ChangeRoleModal from '@/features/admin/users/modals/ChangeRoleModal';
+import ResetPasswordModal from '@/features/admin/users/modals/ResetPasswordModal';
+import SuspendUserModal from '@/features/admin/users/modals/SuspendUserModal';
+import ConfirmDeleteModal from '@/features/admin/users/modals/ConfirmDeleteModal';
+import ExportUserModal from '@/features/admin/users/modals/ExportUserModal';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<ExtendedUserWithProfile[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<ExtendedUserWithProfile[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // filtros superiores
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
+
+  // filtros avanzados (solo país y horas/semana)
+  const [advFilters, setAdvFilters] = useState<AdvancedFilters>({});
+
+  // modales base
+  const [showModal, setShowModal] = useState(false);              // Editar usuario
+  const [showDetailModal, setShowDetailModal] = useState(false);  // Ver usuario (ojo)
   const [selectedUser, setSelectedUser] = useState<ExtendedUserWithProfile | null>(null);
   const [showActions, setShowActions] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
+  // modales del menú
+  const [showChangeRole, setShowChangeRole] = useState(false);
+  const [showResetPwd, setShowResetPwd] = useState(false);
+  const [showSuspend, setShowSuspend] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showExport, setShowExport] = useState(false);
 
-  useEffect(() => {
-    filterUsers();
-  }, [users, searchTerm, selectedRole, selectedStatus]);
+  useEffect(() => { loadUsers(); }, []);
+  useEffect(() => { filterUsers(); }, [users, searchTerm, selectedRole, selectedStatus, advFilters]);
 
   const loadUsers = async () => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 800));
       const mockUsers = extendedMockUsers;
 
       const userStats: UserStats = {
@@ -89,28 +103,42 @@ export default function AdminUsers() {
 
   const filterUsers = () => {
     let filtered = [...users];
+    const q = searchTerm.toLowerCase();
 
+    // búsqueda
     if (searchTerm) {
       filtered = filtered.filter(user => 
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.profile?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.profile?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.profile?.bio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.profile?.skills?.some(skill => 
-          skill.name.toLowerCase().includes(searchTerm.toLowerCase())
-        ) ||
-        user.profile?.university?.toLowerCase().includes(searchTerm.toLowerCase())
+        user.name.toLowerCase().includes(q) ||
+        user.email.toLowerCase().includes(q) ||
+        user.profile?.first_name?.toLowerCase().includes(q) ||
+        user.profile?.last_name?.toLowerCase().includes(q) ||
+        user.profile?.bio?.toLowerCase().includes(q) ||
+        user.profile?.skills?.some(s => s.name.toLowerCase().includes(q)) ||
+        user.profile?.university?.toLowerCase().includes(q)
       );
     }
 
-    if (selectedRole !== 'all') {
-      filtered = filtered.filter(user => user.role === selectedRole);
+    // selects superiores
+    if (selectedRole !== 'all')   filtered = filtered.filter(u => u.role === selectedRole);
+    if (selectedStatus !== 'all') filtered = filtered.filter(u => u.status === selectedStatus);
+
+    // --------- filtros avanzados (solo estos dos) ----------
+    // País
+    if (advFilters.country) {
+      filtered = filtered.filter(u => u.profile?.country === advFilters.country);
     }
 
-    if (selectedStatus !== 'all') {
-      filtered = filtered.filter(user => user.status === selectedStatus);
+    // Horas por semana (ajusta a tu fuente real si es otra)
+    const getHours = (u: any) =>
+      u.profile?.hours_per_week ??
+      u.profile?.availability_hours_per_week ??
+      u.profile?.availability?.hours_per_week ?? null;
+
+    if (advFilters.hoursPerWeek) {
+      const wanted = Number(advFilters.hoursPerWeek);
+      filtered = filtered.filter(u => Number(getHours(u)) === wanted);
     }
+    // -------------------------------------------------------
 
     setFilteredUsers(filtered);
   };
@@ -127,7 +155,7 @@ export default function AdminUsers() {
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case 'admin': return 'Administrador';
+      case 'admin': return 'Administrador'; // sin paréntesis
       case 'hr': return 'Recursos Humanos';
       case 'lead_project': return 'Líder de Proyecto';
       case 'volunteer': return 'Voluntario';
@@ -155,13 +183,8 @@ export default function AdminUsers() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
 
   const handleEditUser = (user: ExtendedUserWithProfile) => {
     setSelectedUser(user);
@@ -173,14 +196,10 @@ export default function AdminUsers() {
     setShowDetailModal(true);
   };
 
-  // Eliminado: handleCreateUser()
-
   const handleSaveUser = (userData: any) => {
     if (selectedUser) {
-      // Actualizar usuario existente
-      setUsers(users.map(u => u.id === selectedUser.id ? { ...u, ...userData } : u));
+      setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, ...userData } : u));
     } else {
-      // Creación deshabilitada
       console.warn('La creación de usuarios está deshabilitada en esta vista.');
     }
     setShowModal(false);
@@ -188,31 +207,48 @@ export default function AdminUsers() {
   };
 
   const handleDeleteUser = (userId: string) => {
-    if (confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
-      setUsers(users.filter(u => u.id !== userId));
-    }
+    setUsers(prev => prev.filter(u => u.id !== userId));
   };
 
-  const getSkillsPreview = (skills: any[] | undefined) => {
-    if (!skills || skills.length === 0) return 'Sin habilidades';
-    if (skills.length <= 2) return skills.map(s => s.name).join(', ');
-    return `${skills.slice(0, 2).map(s => s.name).join(', ')} +${skills.length - 2}`;
+  // Handlers para modales del menú
+  const handleChangeRole = (newRole: ExtendedUserWithProfile['role']) => {
+    if (!selectedUser) return;
+    setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, role: newRole } : u));
+    setShowChangeRole(false);
+    setSelectedUser(null);
+  };
+
+  const handleResetPassword = (newPassword: string) => {
+    console.log(`Password reset for ${selectedUser?.email}: ${newPassword}`);
+    setShowResetPwd(false);
+    setSelectedUser(null);
+  };
+
+  const handleSuspendUser = (reason: string, until?: string) => {
+    if (!selectedUser) return;
+    setUsers(prev => prev.map(u =>
+      u.id === selectedUser.id
+        ? { ...u, status: 'suspended', suspension_reason: reason, suspension_until: until }
+        : u
+    ));
+    setShowSuspend(false);
+    setSelectedUser(null);
   };
 
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="loading-skeleton h-8 w-64"></div>
+        <div className="loading-skeleton h-8 w-64" />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="card p-6">
-              <div className="loading-skeleton h-6 w-20 mb-2"></div>
-              <div className="loading-skeleton h-8 w-16"></div>
+              <div className="loading-skeleton h-6 w-20 mb-2" />
+              <div className="loading-skeleton h-8 w-16" />
             </div>
           ))}
         </div>
         <div className="card p-6">
-          <div className="loading-skeleton h-96 w-full"></div>
+          <div className="loading-skeleton h-96 w-full" />
         </div>
       </div>
     );
@@ -231,7 +267,6 @@ export default function AdminUsers() {
         </div>
         <div className="flex items-center space-x-3">
           <ExportUsers users={filteredUsers} />
-          {/* Eliminado: botón "Nuevo Usuario" */}
         </div>
       </div>
 
@@ -347,12 +382,7 @@ export default function AdminUsers() {
         </div>
 
         {showFilters && (
-          <UserFilters
-            onFilterChange={(filters) => {
-              setSelectedRole(filters.role || 'all');
-              setSelectedStatus(filters.status || 'all');
-            }}
-          />
+          <UserFilters onFilterChange={(filters) => setAdvFilters(filters)} />
         )}
       </div>
 
@@ -396,16 +426,19 @@ export default function AdminUsers() {
                       </div>
                     </div>
                   </td>
+
                   <td className="py-4 px-6">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleColor(user.role)}`}>
                       {getRoleLabel(user.role)}
                     </span>
                   </td>
+
                   <td className="py-4 px-6">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(user.status)}`}>
                       {getStatusLabel(user.status)}
                     </span>
                   </td>
+
                   <td className="py-4 px-6">
                     {user.profile && (
                       <div className="text-sm">
@@ -417,10 +450,16 @@ export default function AdminUsers() {
                       </div>
                     )}
                   </td>
+
                   <td className="py-4 px-6">
                     <div className="text-sm">
                       <p className="text-slate-800 line-clamp-2">
-                        {getSkillsPreview(user.profile?.skills)}
+                        {(() => {
+                          const skills = user.profile?.skills;
+                          if (!skills?.length) return 'Sin habilidades';
+                          if (skills.length <= 2) return skills.map(s => s.name).join(', ');
+                          return `${skills.slice(0, 2).map(s => s.name).join(', ')} +${skills.length - 2}`;
+                        })()}
                       </p>
                       {user.profile?.university && (
                         <p className="text-xs text-slate-500 mt-1">
@@ -429,6 +468,7 @@ export default function AdminUsers() {
                       )}
                     </div>
                   </td>
+
                   <td className="py-4 px-6">
                     <div className="text-sm">
                       {user.last_login ? (
@@ -436,10 +476,7 @@ export default function AdminUsers() {
                           <p className="text-slate-800">{formatDate(user.last_login)}</p>
                           <p className="text-xs text-slate-500 flex items-center">
                             <Calendar className="w-3 h-3 mr-1" />
-                            {new Date(user.last_login).toLocaleTimeString('es-ES', { 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
-                            })}
+                            {new Date(user.last_login).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </>
                       ) : (
@@ -447,15 +484,10 @@ export default function AdminUsers() {
                       )}
                     </div>
                   </td>
+
                   <td className="py-4 px-6">
                     <div className="flex items-center justify-center space-x-2">
-                      <button
-                        onClick={() => handleEditUser(user)}
-                        className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors admin-tooltip"
-                        data-tooltip="Editar usuario"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
+                      {/* OJO: ver detalles */}
                       <button
                         onClick={() => handleViewUser(user)}
                         className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors admin-tooltip"
@@ -463,6 +495,8 @@ export default function AdminUsers() {
                       >
                         <Eye className="w-4 h-4" />
                       </button>
+
+                      {/* Menú de tres puntos */}
                       <div className="relative">
                         <button
                           onClick={() => setShowActions(showActions === user.id ? null : user.id)}
@@ -473,8 +507,12 @@ export default function AdminUsers() {
                         {showActions === user.id && (
                           <UserActions
                             user={user}
-                            onEdit={() => handleEditUser(user)}
-                            onDelete={() => handleDeleteUser(user.id)}
+                            onEdit={() => { setShowActions(null); handleEditUser(user); }}
+                            onChangeRole={() => { setSelectedUser(user); setShowChangeRole(true); setShowActions(null); }}
+                            onResetPassword={() => { setSelectedUser(user); setShowResetPwd(true); setShowActions(null); }}
+                            onSuspend={() => { setSelectedUser(user); setShowSuspend(true); setShowActions(null); }}
+                            onExport={() => { setSelectedUser(user); setShowExport(true); setShowActions(null); }}
+                            onDelete={() => { setSelectedUser(user); setShowDeleteConfirm(true); setShowActions(null); }}
                             onClose={() => setShowActions(null)}
                           />
                         )}
@@ -496,35 +534,66 @@ export default function AdminUsers() {
                 ? 'Intenta ajustar los filtros de búsqueda.'
                 : 'No hay usuarios disponibles en este momento.'}
             </p>
-            {/* Eliminado: CTA Crear Usuario */}
           </div>
         )}
       </div>
 
-      {/* Modales */}
+      {/* Modales existentes */}
       {showModal && (
         <UserModal
           user={selectedUser}
           onSave={handleSaveUser}
-          onClose={() => {
-            setShowModal(false);
-            setSelectedUser(null);
-          }}
+          onClose={() => { setShowModal(false); setSelectedUser(null); }}
         />
       )}
-
 
       {showDetailModal && selectedUser && (
         <UserDetailModal
           user={selectedUser}
-          onClose={() => {
-            setShowDetailModal(false);
-            setSelectedUser(null);
-          }}
-          onEdit={() => {
-            setShowDetailModal(false);
-            handleEditUser(selectedUser);
-          }}
+          onClose={() => { setShowDetailModal(false); setSelectedUser(null); }}
+          onEdit={() => { setShowDetailModal(false); handleEditUser(selectedUser); }}
+        />
+      )}
+
+      {/* Modales del menú */}
+      {showChangeRole && selectedUser && (
+        <ChangeRoleModal
+          user={selectedUser}
+          onSubmit={handleChangeRole}
+          onClose={() => { setShowChangeRole(false); setSelectedUser(null); }}
+        />
+      )}
+
+      {showResetPwd && selectedUser && (
+        <ResetPasswordModal
+          userEmail={selectedUser.email}
+          onSubmit={handleResetPassword}
+          onClose={() => { setShowResetPwd(false); setSelectedUser(null); }}
+        />
+      )}
+
+      {showSuspend && selectedUser && (
+        <SuspendUserModal
+          user={selectedUser}
+          onSubmit={handleSuspendUser}
+          onClose={() => { setShowSuspend(false); setSelectedUser(null); }}
+        />
+      )}
+
+      {showDeleteConfirm && selectedUser && (
+        <ConfirmDeleteModal
+          title="Eliminar usuario"
+          message={`¿Seguro que deseas eliminar a ${selectedUser.name}? Esta acción no se puede deshacer.`}
+          confirmText="Eliminar"
+          onConfirm={() => { handleDeleteUser(selectedUser.id); setShowDeleteConfirm(false); setSelectedUser(null); }}
+          onClose={() => { setShowDeleteConfirm(false); setSelectedUser(null); }}
+        />
+      )}
+
+      {showExport && selectedUser && (
+        <ExportUserModal
+          user={selectedUser}
+          onClose={() => { setShowExport(false); setSelectedUser(null); }}
         />
       )}
     </div>
