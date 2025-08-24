@@ -6,28 +6,24 @@ import {
   Users, 
   Search, 
   Filter, 
-  Plus, 
   Edit, 
   Trash2, 
   MoreVertical,
   Shield,
   UserCheck,
-  UserX,
   Mail,
   Phone,
   MapPin,
   Calendar,
-  Eye,
-  Download,
-  Upload
+  Eye
 } from 'lucide-react';
 import { ExtendedUserWithProfile, UserStats } from '@/lib/types';
 import { extendedMockUsers } from '@/lib/data/extendedUsers';
-import UserFilters from '@/features/admin/UserFilters';
-import UserModal from '@/features/admin/UserModalEdit';
-import UserActions from '@/features/admin/UserActions';
-import ExportUsers from '@/features/admin/ExportUsers';
-import UserDetailModal from '@/features/admin/UserDetailModal';
+import UserFilters from '@/features/admin/users/UserFilters';
+import UserModal from '@/features/admin/users/UserModalEdit';
+import UserActions from '@/features/admin/users/UserActions';
+import ExportUsers from '@/features/admin/users/ExportUsers';
+import UserDetailModal from '@/features/admin/users/UserDetailModal';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<ExtendedUserWithProfile[]>([]);
@@ -39,7 +35,7 @@ export default function AdminUsers() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false); // Nuevo estado para modal de detalles
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<ExtendedUserWithProfile | null>(null);
   const [showActions, setShowActions] = useState<string | null>(null);
 
@@ -53,10 +49,7 @@ export default function AdminUsers() {
 
   const loadUsers = async () => {
     try {
-      // Simular carga de datos
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Usar los datos extendidos importados
       const mockUsers = extendedMockUsers;
 
       const userStats: UserStats = {
@@ -97,7 +90,6 @@ export default function AdminUsers() {
   const filterUsers = () => {
     let filtered = [...users];
 
-    // Filtro por búsqueda (incluyendo habilidades y biografía)
     if (searchTerm) {
       filtered = filtered.filter(user => 
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -112,12 +104,10 @@ export default function AdminUsers() {
       );
     }
 
-    // Filtro por rol
     if (selectedRole !== 'all') {
       filtered = filtered.filter(user => user.role === selectedRole);
     }
 
-    // Filtro por estado
     if (selectedStatus !== 'all') {
       filtered = filtered.filter(user => user.status === selectedStatus);
     }
@@ -180,27 +170,18 @@ export default function AdminUsers() {
 
   const handleViewUser = (user: ExtendedUserWithProfile) => {
     setSelectedUser(user);
-    setShowDetailModal(true); // Abrir modal de detalles
+    setShowDetailModal(true);
   };
 
-  const handleCreateUser = () => {
-    setSelectedUser(null);
-    setShowModal(true);
-  };
+  // Eliminado: handleCreateUser()
 
   const handleSaveUser = (userData: any) => {
     if (selectedUser) {
       // Actualizar usuario existente
       setUsers(users.map(u => u.id === selectedUser.id ? { ...u, ...userData } : u));
     } else {
-      // Crear nuevo usuario
-      const newUser: ExtendedUserWithProfile = {
-        id: Date.now().toString(),
-        ...userData,
-        created_at: new Date().toISOString().replace('T', ' ').substring(0, 19),
-        password: 'temp123' // Temporal
-      };
-      setUsers([...users, newUser]);
+      // Creación deshabilitada
+      console.warn('La creación de usuarios está deshabilitada en esta vista.');
     }
     setShowModal(false);
     setSelectedUser(null);
@@ -250,17 +231,11 @@ export default function AdminUsers() {
         </div>
         <div className="flex items-center space-x-3">
           <ExportUsers users={filteredUsers} />
-          <button
-            onClick={handleCreateUser}
-            className="btn-living flex items-center space-x-2"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Nuevo Usuario</span>
-          </button>
+          {/* Eliminado: botón "Nuevo Usuario" */}
         </div>
       </div>
 
-      {/* Estadísticas Mejoradas */}
+      {/* Estadísticas */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="card p-6 hover-lift">
@@ -321,7 +296,7 @@ export default function AdminUsers() {
         </div>
       )}
 
-      {/* Filtros y búsqueda mejorados */}
+      {/* Filtros y búsqueda */}
       <div className="card p-6">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
           <div className="flex items-center space-x-4 flex-1">
@@ -381,7 +356,7 @@ export default function AdminUsers() {
         )}
       </div>
 
-      {/* Tabla de usuarios mejorada */}
+      {/* Tabla */}
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -516,20 +491,12 @@ export default function AdminUsers() {
           <div className="text-center py-12">
             <Users className="w-12 h-12 text-slate-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-slate-600 mb-2">No se encontraron usuarios</h3>
-            <p className="text-slate-500 mb-4">
+            <p className="text-slate-500">
               {searchTerm || selectedRole !== 'all' || selectedStatus !== 'all'
                 ? 'Intenta ajustar los filtros de búsqueda.'
-                : 'Comienza creando tu primer usuario.'}
+                : 'No hay usuarios disponibles en este momento.'}
             </p>
-            {(!searchTerm && selectedRole === 'all' && selectedStatus === 'all') && (
-              <button
-                onClick={handleCreateUser}
-                className="btn-living-outline"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Crear Usuario
-              </button>
-            )}
+            {/* Eliminado: CTA Crear Usuario */}
           </div>
         )}
       </div>
@@ -546,7 +513,7 @@ export default function AdminUsers() {
         />
       )}
 
-      {/* Nuevo Modal de Detalles */}
+
       {showDetailModal && selectedUser && (
         <UserDetailModal
           user={selectedUser}
